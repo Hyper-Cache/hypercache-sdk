@@ -1,0 +1,33 @@
+# Build artifacts
+node_modules/
+**/node_modules/
+target/
+**/target/
+dist/
+**/dist/
+build/
+**/build/
+*.egg-info/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Lockfiles for libraries (resolved by consumers)
+Cargo.lock
+
+# Secrets / local env
+.env
+.env.*
+**/.env
+*.pem
+*.key
+.npmrc
+.pypirc
+.cargo/credentials*
+
+# OS / editor
+.DS_Store
+**/.DS_Store
+*.swp
+*.log

@@ -1,0 +1,42 @@
+{
+  "name": "hypercache-kv",
+  "version": "0.1.0",
+  "description": "Official JavaScript/TypeScript client for the HyperCache API.",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/index.js",
+    "src/index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test tests/smoke.test.js"
+  },
+  "keywords": [
+    "ai",
+    "llm",
+    "cache",
+    "inference"
+  ],
+  "author": "Hyper Cache <contact@hypercache.ai>",
+  "license": "MIT",
+  "homepage": "https://hypercache.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hyper-Cache/hypercache-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Hyper-Cache/hypercache-sdk/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
