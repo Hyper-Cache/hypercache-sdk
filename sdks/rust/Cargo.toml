@@ -1,6 +1,6 @@
 [package]
 name = "hypercache-kv"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 exclude = ["tests"]
 description = "Official Rust client for the HyperCache API."

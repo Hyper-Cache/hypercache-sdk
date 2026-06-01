@@ -1,6 +1,6 @@
 {
   "name": "hypercache-kv",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Official JavaScript/TypeScript client for the HyperCache API.",
   "type": "module",
   "main": "./src/index.js",

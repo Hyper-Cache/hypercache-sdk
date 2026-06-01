@@ -13,7 +13,7 @@
  * TypeScript types live in ./index.d.ts.
  */
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.1.1";
 
 const DEFAULT_BASE_URL = "https://api.hypercache.ai";
 const DEFAULT_LAYERS = 32;
