@@ -22,6 +22,7 @@ internal sealed class HttpPipeline
     private readonly HttpClient _httpClient;
     private readonly HyperCacheClientOptions _options;
     private readonly string _userAgent;
+    private readonly Uri _baseAddress;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HttpPipeline"/> class.
@@ -40,6 +41,35 @@ internal sealed class HttpPipeline
         }
 
         _userAgent = "hypercache-dotnet/" + packageVersion;
+
+        // Normalize to a trailing slash so relative endpoint paths combine correctly.
+        string baseUrl = _options.BaseUrl.ToString();
+        if (baseUrl.Length == 0 || baseUrl[baseUrl.Length - 1] != '/')
+        {
+            baseUrl += "/";
+        }
+
+        _baseAddress = new Uri(baseUrl, UriKind.Absolute);
+    }
+
+    /// <summary>
+    /// Builds an absolute request URI from a relative endpoint path (for example,
+    /// <c>v1/fingerprint</c>). The leading slash is optional.
+    /// </summary>
+    /// <param name="relativePath">The endpoint path relative to the base URL.</param>
+    /// <returns>The absolute request URI.</returns>
+    public Uri BuildUri(string relativePath)
+    {
+        if (relativePath is null)
+        {
+            throw new ArgumentNullException(nameof(relativePath));
+        }
+
+        string trimmed = relativePath.Length > 0 && relativePath[0] == '/'
+            ? relativePath.Substring(1)
+            : relativePath;
+
+        return new Uri(_baseAddress, trimmed);
     }
 
     /// <summary>
@@ -92,6 +122,58 @@ internal sealed class HttpPipeline
     }
 
     /// <summary>
+    /// Sends a request, applying SDK headers and timeout, but allows the supplied
+    /// status codes to pass through as a successful response instead of being mapped
+    /// to an exception. Used by endpoints with per-call status semantics (such as
+    /// treating <c>404</c> as a cache miss).
+    /// </summary>
+    /// <param name="request">The request to send.</param>
+    /// <param name="allowedStatus">A status code (besides 2xx) to treat as success.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The response. The caller owns and must dispose it.</returns>
+    public async Task<HttpResponseMessage> SendAllowingStatusAsync(
+        HttpRequestMessage request,
+        int allowedStatus,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        ApplyHeaders(request);
+
+        HttpResponseMessage response = await SendCoreAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (response.IsSuccessStatusCode || (int)response.StatusCode == allowedStatus)
+        {
+            return response;
+        }
+
+        string body;
+        try
+        {
+            body = await ReadStringAsync(response, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            response.Dispose();
+            throw;
+        }
+#pragma warning disable CA1031 // Never let body-read failures mask the underlying HTTP error.
+        catch
+        {
+            body = string.Empty;
+        }
+#pragma warning restore CA1031
+
+        int status = (int)response.StatusCode;
+        response.Dispose();
+        throw MapStatusToException(status, body);
+    }
+
+    /// <summary>
     /// Sends a request and returns the response body as bytes.
     /// </summary>
     public async Task<byte[]> SendForBytesAsync(
@@ -116,6 +198,32 @@ internal sealed class HttpPipeline
 
         byte[] payload = await ReadBytesAsync(response, cancellationToken).ConfigureAwait(false);
 
+        return Deserialize<T>(payload);
+    }
+
+    /// <summary>
+    /// Sends a request, deserializes the JSON response body to <typeparamref name="T"/>,
+    /// and also returns the parsed quota headers from the response.
+    /// </summary>
+    public async Task<(T Value, QuotaHeaders Quota)> SendForJsonWithQuotaAsync<T>(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await SendAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+
+        QuotaHeaders quota = QuotaHeaders.From(response);
+        byte[] payload = await ReadBytesAsync(response, cancellationToken).ConfigureAwait(false);
+
+        return (Deserialize<T>(payload), quota);
+    }
+
+    /// <summary>
+    /// Deserializes a JSON payload to <typeparamref name="T"/>, mapping failures to
+    /// <see cref="ServerException"/>.
+    /// </summary>
+    public static T Deserialize<T>(byte[] payload)
+    {
         try
         {
             T? result = JsonSerializer.Deserialize<T>(payload, JsonDefaults.Options);
@@ -131,6 +239,12 @@ internal sealed class HttpPipeline
             throw new ServerException("Failed to parse the HyperCache JSON response.", null, ex);
         }
     }
+
+    /// <summary>
+    /// Serializes a value to UTF-8 JSON bytes using the shared SDK options.
+    /// </summary>
+    public static byte[] Serialize<T>(T value) =>
+        JsonSerializer.SerializeToUtf8Bytes(value, JsonDefaults.Options);
 
     /// <summary>
     /// Reads a response body as bytes, mapping read failures to <see cref="ServerException"/>.

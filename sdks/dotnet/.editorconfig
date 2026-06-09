@@ -106,3 +106,6 @@ dotnet_diagnostic.CS1591.severity = none
 # Tests intentionally use short-lived HttpClient/handler/request doubles whose
 # lifetimes are managed by the test method scope; CA2000 noise is not useful here.
 dotnet_diagnostic.CA2000.severity = none
+# Test helpers/doubles do not need argument validation or token forwarding.
+dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA2016.severity = none
