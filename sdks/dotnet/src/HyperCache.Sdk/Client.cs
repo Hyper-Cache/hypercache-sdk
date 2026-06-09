@@ -1,7 +1,9 @@
 using System;
-using System.Collections.Generic;
+using System.Net.Http;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using HyperCache.Internal;
 
 namespace HyperCache;
 
@@ -10,6 +12,9 @@ namespace HyperCache;
 /// </summary>
 public sealed class Client : IDisposable
 {
+    private readonly HttpClient _httpClient;
+    private readonly bool _ownsHttpClient;
+    private readonly HttpPipeline _pipeline;
     private bool _disposed;
 
     /// <summary>
@@ -31,12 +36,43 @@ public sealed class Client : IDisposable
         }
 
         BaseUrl = options.BaseUrl.ToString();
+
+        if (options.HttpClient is not null)
+        {
+            // Injected client: use as-is and never dispose it (Go's WithHTTPClient parity).
+            _httpClient = options.HttpClient;
+            _ownsHttpClient = false;
+        }
+        else
+        {
+            _httpClient = new HttpClient
+            {
+                // Timeout is enforced per-request by the pipeline via a linked CTS so
+                // that timeouts and caller cancellation remain distinguishable.
+                Timeout = System.Threading.Timeout.InfiniteTimeSpan,
+            };
+            _ownsHttpClient = true;
+        }
+
+        _pipeline = new HttpPipeline(_httpClient, options, ResolvePackageVersion());
     }
 
     /// <summary>
     /// Gets the HyperCache API base URL.
     /// </summary>
     public string BaseUrl { get; }
+
+    /// <summary>
+    /// Gets the internal HTTP pipeline used by endpoint implementations.
+    /// </summary>
+    internal HttpPipeline Pipeline
+    {
+        get
+        {
+            ThrowIfDisposed();
+            return _pipeline;
+        }
+    }
 
     /// <summary>
     /// Generates a HyperCache fingerprint for the supplied bytes.
@@ -120,7 +156,35 @@ public sealed class Client : IDisposable
     /// </summary>
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
+
+        if (_ownsHttpClient)
+        {
+            _httpClient.Dispose();
+        }
+    }
+
+    private static string ResolvePackageVersion()
+    {
+        var assembly = typeof(Client).Assembly;
+
+        string? informational = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+
+        if (!string.IsNullOrWhiteSpace(informational))
+        {
+            // Strip any source-control metadata suffix (e.g. "0.1.0+abc1234").
+            int plus = informational!.IndexOf('+');
+            return plus >= 0 ? informational.Substring(0, plus) : informational;
+        }
+
+        return assembly.GetName().Version?.ToString() ?? "0.0.0";
     }
 
     private void ThrowIfDisposed()

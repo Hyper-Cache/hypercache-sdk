@@ -103,3 +103,6 @@ dotnet_diagnostic.CS1591.severity = suggestion
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.CS1591.severity = none
+# Tests intentionally use short-lived HttpClient/handler/request doubles whose
+# lifetimes are managed by the test method scope; CA2000 noise is not useful here.
+dotnet_diagnostic.CA2000.severity = none
