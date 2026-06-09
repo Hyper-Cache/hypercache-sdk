@@ -22,6 +22,15 @@ public sealed class Client : IDisposable
     /// <summary>The default token-count fingerprint hint.</summary>
     internal const int DefaultNTok = 64;
 
+    /// <summary>The default time-window bucket used by <see cref="CacheListAsync"/>.</summary>
+    internal const string DefaultListBucket = "today";
+
+    /// <summary>The default time-of-day part used by <see cref="CacheListAsync"/>.</summary>
+    internal const string DefaultListPart = "ALL";
+
+    /// <summary>The default page size used by <see cref="CacheListAsync"/>.</summary>
+    internal const int DefaultListLimit = 100;
+
     private const string OctetStream = "application/octet-stream";
     private const string JsonMediaType = "application/json";
 
@@ -423,6 +432,237 @@ public sealed class Client : IDisposable
     }
 
     /// <summary>
+    /// Lists cache entries grouped by run, filtered by time bucket, run, and label prefix.
+    /// </summary>
+    /// <param name="options">Optional list filters and pagination. Defaults are used when omitted.</param>
+    /// <param name="ct">A token to cancel the operation.</param>
+    /// <returns>The grouped list of entries plus the next pagination cursor.</returns>
+    public async Task<CacheListResponse> CacheListAsync(
+        CacheListOptions? options = null,
+        CancellationToken ct = default)
+    {
+        ThrowIfDisposed();
+
+        string bucket = options?.Bucket ?? DefaultListBucket;
+        string part = options?.Part ?? DefaultListPart;
+        int limit = options?.Limit ?? DefaultListLimit;
+
+        if (options?.Bucket is not null && string.IsNullOrWhiteSpace(options.Bucket))
+        {
+            throw new ArgumentException("Bucket must not be empty or whitespace.", nameof(options));
+        }
+
+        if (options?.Part is not null && string.IsNullOrWhiteSpace(options.Part))
+        {
+            throw new ArgumentException("Part must not be empty or whitespace.", nameof(options));
+        }
+
+        if (options?.Limit is not null && options.Limit.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                options.Limit.Value,
+                "Limit must be positive.");
+        }
+
+        var parameters = new[]
+        {
+            new KeyValuePair<string, string?>("bucket", bucket),
+            new KeyValuePair<string, string?>("part", part),
+            new KeyValuePair<string, string?>("limit", limit.ToString(CultureInfo.InvariantCulture)),
+            new KeyValuePair<string, string?>("run", options?.Run),
+            new KeyValuePair<string, string?>("label_prefix", options?.LabelPrefix),
+            new KeyValuePair<string, string?>(
+                "cursor",
+                options?.Cursor?.ToString(CultureInfo.InvariantCulture)),
+        };
+
+        string query = QueryStringBuilder.Build(parameters);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            _pipeline.BuildUri("v1/cache/list" + query));
+
+        (CacheListWireResponse body, QuotaHeaders quota) = await _pipeline
+            .SendForJsonWithQuotaAsync<CacheListWireResponse>(request, ct)
+            .ConfigureAwait(false);
+
+        var runs = new List<CacheListRunGroup>(body.Runs.Count);
+        foreach (CacheListWireRunGroup group in body.Runs)
+        {
+            var entries = new List<CacheListEntry>(group.Entries.Count);
+            foreach (CacheListWireEntry entry in group.Entries)
+            {
+                entries.Add(new CacheListEntry
+                {
+                    FingerprintHex = entry.FingerprintHex ?? string.Empty,
+                    SizeBytes = entry.SizeBytes,
+                    StoredAt = entry.StoredAt,
+                    ExpiresAt = entry.ExpiresAt,
+                    Label = entry.Label,
+                    Run = entry.Run,
+                });
+            }
+
+            runs.Add(new CacheListRunGroup
+            {
+                Run = group.Run,
+                Count = group.Count,
+                TotalBytes = group.TotalBytes,
+                Entries = entries,
+            });
+        }
+
+        return new CacheListResponse
+        {
+            Bucket = body.Bucket,
+            Part = body.Part,
+            TotalCount = body.TotalCount,
+            TotalBytes = body.TotalBytes,
+            Runs = runs,
+            NextCursor = body.NextCursor,
+            OpsUsed = quota.OpsUsed,
+            OpsCap = quota.OpsCap,
+            OpsRemaining = quota.OpsRemaining,
+        };
+    }
+
+    /// <summary>
+    /// Updates the label and/or run of an existing cache entry without touching its payload.
+    /// </summary>
+    /// <param name="fingerprint">The hexadecimal fingerprint of the entry to relabel.</param>
+    /// <param name="options">The new label and/or run. A <see langword="null"/> value clears that field.</param>
+    /// <param name="ct">A token to cancel the operation.</param>
+    /// <returns>The relabel result reported by the server.</returns>
+    public async Task<CacheRelabelResult> CacheRelabelAsync(
+        string fingerprint,
+        CacheRelabelOptions options,
+        CancellationToken ct = default)
+    {
+        ThrowIfDisposed();
+        ValidateFingerprint(fingerprint);
+
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        var payload = new CacheRelabelWireRequest
+        {
+            Label = options.Label,
+            Run = options.Run,
+        };
+
+        // Relabel uses explicit null-clears, so serialize with the include-nulls
+        // options rather than the shared null-omitting defaults.
+        byte[] body = HttpPipeline.SerializeIncludingNulls(payload);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            _pipeline.BuildUri("v1/cache/" + Uri.EscapeDataString(fingerprint) + "/relabel"))
+        {
+            Content = CreateJsonContent(body),
+        };
+
+        (CacheRelabelWireResponse response, QuotaHeaders quota) = await _pipeline
+            .SendForJsonWithQuotaAsync<CacheRelabelWireResponse>(request, ct)
+            .ConfigureAwait(false);
+
+        return new CacheRelabelResult
+        {
+            Relabeled = response.Relabeled,
+            FingerprintHex = response.FingerprintHex ?? fingerprint,
+            Label = response.Label,
+            Run = response.Run,
+            OpsUsed = quota.OpsUsed,
+            OpsCap = quota.OpsCap,
+            OpsRemaining = quota.OpsRemaining,
+        };
+    }
+
+    /// <summary>
+    /// Bulk deletes every cache entry whose label starts with the given prefix.
+    /// </summary>
+    /// <remarks>
+    /// Two-step safety: list entries with the same label prefix first to learn the
+    /// count, then pass that exact count as <paramref name="confirmCount"/>.
+    /// </remarks>
+    /// <param name="labelPrefix">The label prefix to match.</param>
+    /// <param name="confirmCount">The expected number of entries to delete.</param>
+    /// <param name="ct">A token to cancel the operation.</param>
+    /// <returns>The bulk delete result reported by the server.</returns>
+    public Task<BulkDeleteResult> CacheBulkDeleteByLabelAsync(
+        string labelPrefix,
+        int confirmCount,
+        CancellationToken ct = default)
+    {
+        ThrowIfDisposed();
+
+        if (labelPrefix is null)
+        {
+            throw new ArgumentNullException(nameof(labelPrefix));
+        }
+
+        if (string.IsNullOrWhiteSpace(labelPrefix))
+        {
+            throw new ArgumentException("Label prefix must not be empty or whitespace.", nameof(labelPrefix));
+        }
+
+        ValidateConfirmCount(confirmCount);
+
+        var parameters = new[]
+        {
+            new KeyValuePair<string, string?>("label_prefix", labelPrefix),
+            new KeyValuePair<string, string?>(
+                "confirm",
+                confirmCount.ToString(CultureInfo.InvariantCulture)),
+        };
+
+        return BulkDeleteAsync("v1/cache/by-label" + QueryStringBuilder.Build(parameters), ct);
+    }
+
+    /// <summary>
+    /// Bulk deletes every cache entry older than the given relative time.
+    /// </summary>
+    /// <remarks>
+    /// Two-step safety: list entries with the equivalent window first to learn the
+    /// count, then pass that exact count as <paramref name="confirmCount"/>.
+    /// </remarks>
+    /// <param name="olderThan">The relative age (for example, <c>30d</c>, <c>12h</c>, <c>1y</c>).</param>
+    /// <param name="confirmCount">The expected number of entries to delete.</param>
+    /// <param name="ct">A token to cancel the operation.</param>
+    /// <returns>The bulk delete result reported by the server.</returns>
+    public Task<BulkDeleteResult> CacheBulkDeleteByAgeAsync(
+        string olderThan,
+        int confirmCount,
+        CancellationToken ct = default)
+    {
+        ThrowIfDisposed();
+
+        if (olderThan is null)
+        {
+            throw new ArgumentNullException(nameof(olderThan));
+        }
+
+        if (string.IsNullOrWhiteSpace(olderThan))
+        {
+            throw new ArgumentException("olderThan must not be empty or whitespace.", nameof(olderThan));
+        }
+
+        ValidateConfirmCount(confirmCount);
+
+        var parameters = new[]
+        {
+            new KeyValuePair<string, string?>("older_than", olderThan),
+            new KeyValuePair<string, string?>(
+                "confirm",
+                confirmCount.ToString(CultureInfo.InvariantCulture)),
+        };
+
+        return BulkDeleteAsync("v1/cache/by-age" + QueryStringBuilder.Build(parameters), ct);
+    }
+
+    /// <summary>
     /// Disposes resources owned by this client.
     /// </summary>
     public void Dispose()
@@ -437,6 +677,36 @@ public sealed class Client : IDisposable
         if (_ownsHttpClient)
         {
             _httpClient.Dispose();
+        }
+    }
+
+    private async Task<BulkDeleteResult> BulkDeleteAsync(string relativePath, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, _pipeline.BuildUri(relativePath));
+
+        (BulkDeleteWireResponse body, QuotaHeaders quota) = await _pipeline
+            .SendForJsonWithQuotaAsync<BulkDeleteWireResponse>(request, ct)
+            .ConfigureAwait(false);
+
+        return new BulkDeleteResult
+        {
+            Deleted = body.Deleted,
+            BytesFreed = body.BytesFreed,
+            CutoffUnix = body.CutoffUnix,
+            OpsUsed = quota.OpsUsed,
+            OpsCap = quota.OpsCap,
+            OpsRemaining = quota.OpsRemaining,
+        };
+    }
+
+    private static void ValidateConfirmCount(int confirmCount)
+    {
+        if (confirmCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(confirmCount),
+                confirmCount,
+                "Confirm count must be greater than or equal to zero.");
         }
     }
 

@@ -20,12 +20,34 @@ internal static class JsonDefaults
     /// </summary>
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
+    /// <summary>
+    /// Gets serializer options that include properties with <see langword="null"/> values
+    /// when writing.
+    /// </summary>
+    /// <remarks>
+    /// Used by requests that rely on explicit null-clear semantics (for example,
+    /// relabel), where omitting a property and sending <c>null</c> mean different
+    /// things to the API.
+    /// </remarks>
+    public static JsonSerializerOptions IncludeNullsOptions { get; } = CreateIncludeNullsOptions();
+
     private static JsonSerializerOptions CreateOptions()
     {
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        };
+
+        return options;
+    }
+
+    private static JsonSerializerOptions CreateIncludeNullsOptions()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
         };
 
         return options;

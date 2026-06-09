@@ -247,6 +247,13 @@ internal sealed class HttpPipeline
         JsonSerializer.SerializeToUtf8Bytes(value, JsonDefaults.Options);
 
     /// <summary>
+    /// Serializes a value to UTF-8 JSON bytes, writing properties with
+    /// <see langword="null"/> values (for explicit null-clear semantics).
+    /// </summary>
+    public static byte[] SerializeIncludingNulls<T>(T value) =>
+        JsonSerializer.SerializeToUtf8Bytes(value, JsonDefaults.IncludeNullsOptions);
+
+    /// <summary>
     /// Reads a response body as bytes, mapping read failures to <see cref="ServerException"/>.
     /// </summary>
     public static async Task<byte[]> ReadBytesAsync(
