@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace HyperCache.Tests;
@@ -25,6 +26,26 @@ public sealed class ClientLifecycleTests
         // The injected client must remain usable (not disposed) after Client.Dispose().
         injected.DefaultRequestHeaders.Add("X-Probe", "1");
         Assert.True(injected.DefaultRequestHeaders.Contains("X-Probe"));
+    }
+
+    [Fact]
+    public async Task Dispose_DisposesOwnedHttpClient()
+    {
+        // When no HttpClient is injected, the Client owns the one it creates and must
+        // dispose it. Using the disposed client to send a request surfaces the
+        // underlying disposal as an ObjectDisposedException from the Client guard,
+        // and the owned HttpClient itself is no longer usable.
+        var client = new Client(new HyperCacheClientOptions
+        {
+            ApiKey = "k",
+            BaseUrl = new Uri("https://api.example.test"),
+        });
+
+        client.Dispose();
+
+        // The Client guards every endpoint call after disposal.
+        await Assert.ThrowsAsync<ObjectDisposedException>(
+            () => client.FingerprintAsync(new byte[] { 1 }));
     }
 
     [Fact]

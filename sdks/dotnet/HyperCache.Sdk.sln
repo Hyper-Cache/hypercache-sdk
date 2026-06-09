@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E1CEC002
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperCache.Sdk.Tests", "tests\HyperCache.Sdk.Tests\HyperCache.Sdk.Tests.csproj", "{79AEE74E-7280-45F5-86A2-DD8F28927EE0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HyperCache.Sdk.IntegrationTests", "tests\HyperCache.Sdk.IntegrationTests\HyperCache.Sdk.IntegrationTests.csproj", "{0B8ED540-95FE-487E-AF86-3AC23AEBAF95}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +30,14 @@ Global
 		{79AEE74E-7280-45F5-86A2-DD8F28927EE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79AEE74E-7280-45F5-86A2-DD8F28927EE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79AEE74E-7280-45F5-86A2-DD8F28927EE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B8ED540-95FE-487E-AF86-3AC23AEBAF95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B8ED540-95FE-487E-AF86-3AC23AEBAF95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B8ED540-95FE-487E-AF86-3AC23AEBAF95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B8ED540-95FE-487E-AF86-3AC23AEBAF95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F2D21294-9F55-4E6C-8867-9DFE6455ECB7} = {78831AF5-AA51-47F3-B08B-6FF576023380}
 		{79AEE74E-7280-45F5-86A2-DD8F28927EE0} = {E1CEC002-2970-43E3-A1E9-E1B796D52FE9}
+		{0B8ED540-95FE-487E-AF86-3AC23AEBAF95} = {E1CEC002-2970-43E3-A1E9-E1B796D52FE9}
 	EndGlobalSection
 EndGlobal

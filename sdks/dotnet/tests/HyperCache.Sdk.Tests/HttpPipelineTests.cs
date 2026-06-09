@@ -103,6 +103,35 @@ public sealed class HttpPipelineTests
     }
 
     [Fact]
+    public async Task SendAsync_OmitsAuthorizationHeaderWhenApiKeyMissing()
+    {
+        var stub = new StubHttpMessageHandler((_, _) => Respond(HttpStatusCode.OK, "ok"));
+        var httpClient = new HttpClient(stub)
+        {
+            Timeout = System.Threading.Timeout.InfiniteTimeSpan,
+        };
+
+        // No ApiKey configured: the pipeline must not attach an Authorization header.
+        var options = new HyperCacheClientOptions
+        {
+            BaseUrl = new Uri("https://api.example.test"),
+        };
+        var pipeline = new HttpPipeline(httpClient, options, "1.2.3");
+
+        using var response = await pipeline.SendAsync(Request(), CancellationToken.None);
+
+        Assert.NotNull(stub.LastRequest);
+        Assert.Null(stub.LastRequest!.Headers.Authorization);
+        Assert.False(stub.LastRequest.Headers.Contains("Authorization"));
+
+        // The User-Agent is still applied even without a key.
+        Assert.StartsWith(
+            "hypercache-dotnet/",
+            stub.LastRequest.Headers.UserAgent.ToString(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task SendForBytesAsync_ReturnsBody()
     {
         var (pipeline, _) = CreatePipeline((_, _) => new HttpResponseMessage(HttpStatusCode.OK)
