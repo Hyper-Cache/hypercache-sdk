@@ -1,0 +1,403 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>HyperCache.Sdk</name>
+    </assembly>
+    <members>
+        <member name="T:HyperCache.Client">
+            <summary>
+            Client for the HyperCache API.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Client.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.Client"/> class using environment-based configuration.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Client.#ctor(HyperCache.HyperCacheClientOptions)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.Client"/> class.
+            </summary>
+        </member>
+        <member name="P:HyperCache.Client.BaseUrl">
+            <summary>
+            Gets the HyperCache API base URL.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Client.FingerprintAsync(System.ReadOnlyMemory{System.Byte},HyperCache.FingerprintOptions,System.Threading.CancellationToken)">
+            <summary>
+            Generates a HyperCache fingerprint for the supplied bytes.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Client.CacheLookupAsync(System.ReadOnlyMemory{System.Byte},HyperCache.FingerprintOptions,System.Threading.CancellationToken)">
+            <summary>
+            Looks up a value in HyperCache using the supplied bytes.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Client.CachePutAsync(System.String,System.ReadOnlyMemory{System.Byte},HyperCache.CachePutOptions,System.Threading.CancellationToken)">
+            <summary>
+            Stores bytes in HyperCache under the supplied fingerprint.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Client.CacheGetAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves cached bytes by fingerprint. A cache miss returns null.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Client.CacheDeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a cached value by fingerprint. Delete is idempotent.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Client.Dispose">
+            <summary>
+            Disposes resources owned by this client.
+            </summary>
+        </member>
+        <member name="T:HyperCache.HyperCacheException">
+            <summary>
+            Base exception for errors returned by the HyperCache API or raised by the HyperCache SDK.
+            </summary>
+        </member>
+        <member name="M:HyperCache.HyperCacheException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.HyperCacheException"/> class.
+            </summary>
+        </member>
+        <member name="M:HyperCache.HyperCacheException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.HyperCacheException"/> class.
+            </summary>
+        </member>
+        <member name="M:HyperCache.HyperCacheException.#ctor(System.String,System.Nullable{System.Int32})">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.HyperCacheException"/> class.
+            </summary>
+        </member>
+        <member name="M:HyperCache.HyperCacheException.#ctor(System.String,System.Nullable{System.Int32},System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.HyperCacheException"/> class.
+            </summary>
+        </member>
+        <member name="P:HyperCache.HyperCacheException.Status">
+            <summary>
+            Gets the HTTP status code associated with this exception, when available.
+            </summary>
+        </member>
+        <member name="T:HyperCache.AuthException">
+            <summary>
+            Represents an authentication failure from the HyperCache API.
+            </summary>
+        </member>
+        <member name="M:HyperCache.AuthException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.AuthException"/> class.
+            </summary>
+        </member>
+        <member name="M:HyperCache.AuthException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.AuthException"/> class.
+            </summary>
+        </member>
+        <member name="T:HyperCache.QuotaException">
+            <summary>
+            Represents a quota or payment-related failure from the HyperCache API.
+            </summary>
+        </member>
+        <member name="M:HyperCache.QuotaException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.QuotaException"/> class.
+            </summary>
+        </member>
+        <member name="M:HyperCache.QuotaException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.QuotaException"/> class.
+            </summary>
+        </member>
+        <member name="T:HyperCache.RateLimitException">
+            <summary>
+            Represents a rate-limit failure from the HyperCache API.
+            </summary>
+        </member>
+        <member name="M:HyperCache.RateLimitException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.RateLimitException"/> class.
+            </summary>
+        </member>
+        <member name="M:HyperCache.RateLimitException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.RateLimitException"/> class.
+            </summary>
+        </member>
+        <member name="T:HyperCache.ClientException">
+            <summary>
+            Represents a client-side API failure, usually an HTTP 4xx response.
+            </summary>
+        </member>
+        <member name="M:HyperCache.ClientException.#ctor(System.String,System.Nullable{System.Int32})">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.ClientException"/> class.
+            </summary>
+        </member>
+        <member name="M:HyperCache.ClientException.#ctor(System.String,System.Nullable{System.Int32},System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.ClientException"/> class.
+            </summary>
+        </member>
+        <member name="T:HyperCache.ServerException">
+            <summary>
+            Represents a server-side, network, or timeout failure.
+            </summary>
+        </member>
+        <member name="M:HyperCache.ServerException.#ctor(System.String,System.Nullable{System.Int32})">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.ServerException"/> class.
+            </summary>
+        </member>
+        <member name="M:HyperCache.ServerException.#ctor(System.String,System.Nullable{System.Int32},System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.ServerException"/> class.
+            </summary>
+        </member>
+        <member name="T:HyperCache.HyperCacheClient">
+            <summary>
+            Static convenience methods for common HyperCache operations.
+            </summary>
+        </member>
+        <member name="M:HyperCache.HyperCacheClient.FingerprintAsync(System.ReadOnlyMemory{System.Byte},HyperCache.FingerprintOptions,System.Threading.CancellationToken)">
+            <summary>
+            Generates a HyperCache fingerprint using a default client.
+            </summary>
+        </member>
+        <member name="M:HyperCache.HyperCacheClient.CacheGetAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Retrieves cached bytes by fingerprint using a default client.
+            </summary>
+        </member>
+        <member name="T:HyperCache.HyperCacheClientOptions">
+            <summary>
+            Configures the HyperCache SDK client.
+            </summary>
+        </member>
+        <member name="P:HyperCache.HyperCacheClientOptions.ApiKey">
+            <summary>
+            Gets or sets the HyperCache API key. If omitted, the SDK will later read HYPERCACHE_KEY.
+            </summary>
+        </member>
+        <member name="P:HyperCache.HyperCacheClientOptions.BaseUrl">
+            <summary>
+            Gets or sets the HyperCache API base URL.
+            </summary>
+        </member>
+        <member name="P:HyperCache.HyperCacheClientOptions.Timeout">
+            <summary>
+            Gets or sets the request timeout.
+            </summary>
+        </member>
+        <member name="P:HyperCache.HyperCacheClientOptions.HttpClient">
+            <summary>
+            Gets or sets an optional externally managed HTTP client.
+            </summary>
+        </member>
+        <member name="T:HyperCache.CacheLookupResult">
+            <summary>
+            Represents the result of a HyperCache cache lookup.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CacheLookupResult.Hit">
+            <summary>
+            Gets or sets a value indicating whether the lookup was a cache hit.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CacheLookupResult.FingerprintHex">
+            <summary>
+            Gets or sets the fingerprint associated with the lookup.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CacheLookupResult.Value">
+            <summary>
+            Gets or sets the cached value bytes when the lookup was a hit.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CacheLookupResult.Expired">
+            <summary>
+            Gets or sets a value indicating whether the cache entry was expired.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CacheLookupResult.OpsUsed">
+            <summary>
+            Gets or sets the number of HyperCache ops used by the request.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CacheLookupResult.OpsCap">
+            <summary>
+            Gets or sets the HyperCache ops cap.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CacheLookupResult.OpsRemaining">
+            <summary>
+            Gets or sets the remaining HyperCache ops.
+            </summary>
+        </member>
+        <member name="T:HyperCache.CachePutOptions">
+            <summary>
+            Options used when storing a value in HyperCache.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutOptions.Ttl">
+            <summary>
+            Gets or sets the time-to-live in seconds.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutOptions.Label">
+            <summary>
+            Gets or sets the plaintext label metadata.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutOptions.Run">
+            <summary>
+            Gets or sets the run identifier.
+            </summary>
+        </member>
+        <member name="T:HyperCache.CachePutResult">
+            <summary>
+            Represents the result of storing a value in HyperCache.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutResult.Stored">
+            <summary>
+            Gets or sets a value indicating whether the value was stored.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutResult.SizeBytes">
+            <summary>
+            Gets or sets the stored value size in bytes.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutResult.ExpiresAt">
+            <summary>
+            Gets or sets the expiration timestamp, when available.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutResult.Label">
+            <summary>
+            Gets or sets the plaintext label metadata.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutResult.Run">
+            <summary>
+            Gets or sets the run identifier.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutResult.OpsUsed">
+            <summary>
+            Gets or sets the number of HyperCache ops used by the request.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutResult.OpsCap">
+            <summary>
+            Gets or sets the HyperCache ops cap.
+            </summary>
+        </member>
+        <member name="P:HyperCache.CachePutResult.OpsRemaining">
+            <summary>
+            Gets or sets the remaining HyperCache ops.
+            </summary>
+        </member>
+        <member name="T:HyperCache.FingerprintOptions">
+            <summary>
+            Options used when generating a HyperCache fingerprint.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintOptions.Layers">
+            <summary>
+            Gets or sets the number of layers used by the fingerprint operation.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintOptions.NTok">
+            <summary>
+            Gets or sets the token count hint used by the fingerprint operation.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintOptions.Prev">
+            <summary>
+            Gets or sets the previous fingerprint bytes for chain-aware operations.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintOptions.PrevHex">
+            <summary>
+            Gets or sets the previous fingerprint as a hexadecimal string.
+            </summary>
+        </member>
+        <member name="T:HyperCache.FingerprintResult">
+            <summary>
+            Represents the result of a HyperCache fingerprint operation.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintResult.Record">
+            <summary>
+            Gets or sets the raw fingerprint record.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintResult.RecordHex">
+            <summary>
+            Gets or sets the fingerprint as a hexadecimal string.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintResult.Version">
+            <summary>
+            Gets or sets the fingerprint protocol version.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintResult.OpsUsed">
+            <summary>
+            Gets or sets the number of HyperCache ops used by the request.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintResult.OpsCap">
+            <summary>
+            Gets or sets the HyperCache ops cap.
+            </summary>
+        </member>
+        <member name="P:HyperCache.FingerprintResult.OpsRemaining">
+            <summary>
+            Gets or sets the remaining HyperCache ops.
+            </summary>
+        </member>
+        <member name="T:HyperCache.Session">
+            <summary>
+            Chain-aware wrapper around <see cref="T:HyperCache.Client"/> that tracks previous fingerprints and run scope.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Session.#ctor(HyperCache.Client)">
+            <summary>
+            Initializes a new instance of the <see cref="T:HyperCache.Session"/> class.
+            </summary>
+        </member>
+        <member name="P:HyperCache.Session.Prev">
+            <summary>
+            Gets the previous fingerprint bytes for chain-aware operations.
+            </summary>
+        </member>
+        <member name="P:HyperCache.Session.Run">
+            <summary>
+            Gets the current run identifier.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Session.Reset">
+            <summary>
+            Resets the session chain state.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Session.FingerprintAsync(System.ReadOnlyMemory{System.Byte},HyperCache.FingerprintOptions,System.Threading.CancellationToken)">
+            <summary>
+            Generates a fingerprint and updates the session chain.
+            </summary>
+        </member>
+        <member name="M:HyperCache.Session.WithRunAsync``1(System.String,System.Func{HyperCache.Session,System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Executes an operation with the specified run identifier and restores the prior run afterward.
+            </summary>
+        </member>
+    </members>
+</doc>

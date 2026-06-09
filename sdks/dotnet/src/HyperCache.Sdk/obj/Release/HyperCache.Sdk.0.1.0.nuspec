@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>HyperCache.Sdk</id>
+    <version>0.1.0</version>
+    <authors>Hyper Cache</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <readme>README.md</readme>
+    <projectUrl>https://hypercache.ai/</projectUrl>
+    <description>A public, idiomatic C#/.NET SDK for the HyperCache API.</description>
+    <tags>ai llm cache inference</tags>
+    <repository type="git" url="https://github.com/Hyper-Cache/hypercache-sdk" commit="fde56c9fb831a8fef52734527c27e86e727f8374" />
+    <dependencies>
+      <group targetFramework="net8.0">
+        <dependency id="System.Text.Json" version="8.0.5" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="System.Memory" version="4.5.5" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Json" version="8.0.5" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="C:\Users\ssang\OneDrive\Projects\hypercache-sdk\sdks\dotnet\src\HyperCache.Sdk\bin\Release\net8.0\HyperCache.Sdk.dll" target="lib\net8.0\HyperCache.Sdk.dll" />
+    <file src="C:\Users\ssang\OneDrive\Projects\hypercache-sdk\sdks\dotnet\src\HyperCache.Sdk\bin\Release\net8.0\HyperCache.Sdk.xml" target="lib\net8.0\HyperCache.Sdk.xml" />
+    <file src="C:\Users\ssang\OneDrive\Projects\hypercache-sdk\sdks\dotnet\src\HyperCache.Sdk\bin\Release\netstandard2.0\HyperCache.Sdk.dll" target="lib\netstandard2.0\HyperCache.Sdk.dll" />
+    <file src="C:\Users\ssang\OneDrive\Projects\hypercache-sdk\sdks\dotnet\src\HyperCache.Sdk\bin\Release\netstandard2.0\HyperCache.Sdk.xml" target="lib\netstandard2.0\HyperCache.Sdk.xml" />
+    <file src="C:\Users\ssang\OneDrive\Projects\hypercache-sdk\sdks\dotnet\README.md" target="\README.md" />
+  </files>
+</package>
