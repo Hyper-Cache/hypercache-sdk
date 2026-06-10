@@ -30,8 +30,17 @@ modern runtime behavior and optimizations.
 Set your API key (and optionally a custom base URL) via environment variables:
 
 ```text
-HYPERCACHE_KEY
-HYPERCACHE_BASE_URL
+HYPERCACHE_KEY        # API key used to authenticate requests
+HYPERCACHE_BASE_URL   # optional override for the API base URL
+```
+
+With those set, the parameterless constructor reads them automatically:
+
+```csharp
+using HyperCache;
+
+// Reads HYPERCACHE_KEY, and HYPERCACHE_BASE_URL when present.
+using var client = new Client();
 ```
 
 Or configure the client explicitly:
@@ -48,7 +57,20 @@ using var client = new Client(new HyperCacheClientOptions
 });
 ```
 
+Configuration resolution rules:
+
+- An explicit `HyperCacheClientOptions.ApiKey` always overrides `HYPERCACHE_KEY`.
+- An explicit `HyperCacheClientOptions.BaseUrl` always overrides `HYPERCACHE_BASE_URL`.
+- If no API key can be resolved from either the options or `HYPERCACHE_KEY`, the
+  constructor throws `AuthException` immediately rather than creating an
+  unauthenticated client.
+
 The default base URL is `https://api.hypercache.ai`.
+
+> **Reuse the client.** `Client` wraps an `HttpClient` and is safe to share across
+> requests and threads. Create one `Client` (or use the static `HyperCacheClient`
+> convenience methods, which share a single default client) and reuse it for the
+> lifetime of your application rather than constructing a new one per request.
 
 ## Fingerprint
 
@@ -243,6 +265,10 @@ PipelineReport report = pipeline.End();
 Console.WriteLine($"steps={report.NSteps} hits={report.NHits} misses={report.NMisses}");
 Console.WriteLine(report.ExportAudit());
 ```
+
+On a cache miss, `Pipeline.CachedAsync` stores the computed value with the TTL you
+pass. When you omit `ttl`, it defaults to `86400` seconds (one day), matching the
+TypeScript and Go SDK pipeline behavior.
 
 ## Error handling
 

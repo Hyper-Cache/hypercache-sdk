@@ -1,3 +1,4 @@
+using System;
 using Xunit;
 
 namespace HyperCache.Tests;
@@ -18,8 +19,20 @@ public sealed class ScaffoldTests
     [Fact]
     public void Client_ExposesDefaultBaseUrl()
     {
-        using var client = new Client();
+        string? previousBaseUrl = Environment.GetEnvironmentVariable("HYPERCACHE_BASE_URL");
+        try
+        {
+            // Ensure no ambient base-URL override interferes with the default assertion.
+            Environment.SetEnvironmentVariable("HYPERCACHE_BASE_URL", null);
 
-        Assert.Equal("https://api.hypercache.ai/", client.BaseUrl);
+            // An API key is required, but BaseUrl is left at its default.
+            using var client = new Client(new HyperCacheClientOptions { ApiKey = "k" });
+
+            Assert.Equal("https://api.hypercache.ai/", client.BaseUrl);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("HYPERCACHE_BASE_URL", previousBaseUrl);
+        }
     }
 }

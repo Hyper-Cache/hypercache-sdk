@@ -162,6 +162,48 @@ public sealed class PipelineTests : EndpointTestBase
     }
 
     [Fact]
+    public async Task CachedAsync_MissPath_DefaultsTtlTo86400_WhenTtlOmitted()
+    {
+        string? capturedTtl = null;
+        var (client, _) = CreateClient((req, _) =>
+        {
+            if (req.Method == HttpMethod.Put)
+            {
+                capturedTtl = HeaderOrNull(req, "X-Hc-TTL");
+                return PutResponse();
+            }
+
+            return LookupMiss("cafe");
+        });
+        using var pipeline = new Pipeline(client);
+
+        await pipeline.CachedAsync("step-1", new byte[] { 1 }, () => Task.FromResult("computed"));
+
+        Assert.Equal("86400", capturedTtl);
+    }
+
+    [Fact]
+    public async Task CachedAsync_MissPath_UsesSuppliedTtl_WhenProvided()
+    {
+        string? capturedTtl = null;
+        var (client, _) = CreateClient((req, _) =>
+        {
+            if (req.Method == HttpMethod.Put)
+            {
+                capturedTtl = HeaderOrNull(req, "X-Hc-TTL");
+                return PutResponse();
+            }
+
+            return LookupMiss("cafe");
+        });
+        using var pipeline = new Pipeline(client);
+
+        await pipeline.CachedAsync("step-1", new byte[] { 1 }, () => Task.FromResult("computed"), ttl: 120);
+
+        Assert.Equal("120", capturedTtl);
+    }
+
+    [Fact]
     public async Task CachedAsync_MissPath_AttachesRun()
     {
         string? capturedRun = null;

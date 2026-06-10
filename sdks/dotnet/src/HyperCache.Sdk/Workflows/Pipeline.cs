@@ -23,6 +23,13 @@ public sealed class Pipeline : IDisposable
     , IAsyncDisposable
 #endif
 {
+    /// <summary>
+    /// The default time-to-live, in seconds, applied when storing a computed value on a
+    /// cache miss and the caller did not supply an explicit TTL. Matches the TypeScript
+    /// and Go SDK pipeline behavior (one day).
+    /// </summary>
+    public const int DefaultCachedTtlSeconds = 86400;
+
     private readonly Session _session;
     private readonly string? _run;
     private readonly List<PipelineStep> _steps = new();
@@ -106,7 +113,7 @@ public sealed class Pipeline : IDisposable
     /// <param name="label">The step label, also stored as the cache entry label on a miss.</param>
     /// <param name="inputBytes">The input bytes used to look up (and on a miss, store) the value.</param>
     /// <param name="computeFn">The function invoked to compute the value on a cache miss.</param>
-    /// <param name="ttl">An optional time-to-live in seconds applied when storing a computed value.</param>
+    /// <param name="ttl">An optional time-to-live in seconds applied when storing a computed value on a miss. When omitted, defaults to <see cref="DefaultCachedTtlSeconds"/> (86400 seconds / one day).</param>
     /// <param name="ct">A token to cancel the operation.</param>
     /// <returns>The cached or computed value together with a hit indicator.</returns>
     /// <exception cref="ArgumentException"><paramref name="label"/> is <see langword="null"/>, empty, or whitespace.</exception>
@@ -161,7 +168,9 @@ public sealed class Pipeline : IDisposable
 
         var putOptions = new CachePutOptions
         {
-            Ttl = ttl,
+            // On a miss, default to a one-day TTL when the caller did not supply one,
+            // matching the TypeScript and Go SDK pipeline behavior.
+            Ttl = ttl ?? DefaultCachedTtlSeconds,
             Label = label,
             Run = _run,
         };
@@ -193,7 +202,7 @@ public sealed class Pipeline : IDisposable
     /// <param name="label">The step label, also stored as the cache entry label on a miss.</param>
     /// <param name="input">The input string used to look up (and on a miss, store) the value.</param>
     /// <param name="computeFn">The function invoked to compute the value on a cache miss.</param>
-    /// <param name="ttl">An optional time-to-live in seconds applied when storing a computed value.</param>
+    /// <param name="ttl">An optional time-to-live in seconds applied when storing a computed value on a miss. When omitted, defaults to <see cref="DefaultCachedTtlSeconds"/> (86400 seconds / one day).</param>
     /// <param name="ct">A token to cancel the operation.</param>
     /// <returns>The cached or computed value together with a hit indicator.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="input"/> is <see langword="null"/>.</exception>

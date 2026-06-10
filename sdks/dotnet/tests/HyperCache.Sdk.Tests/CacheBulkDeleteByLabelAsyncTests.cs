@@ -116,7 +116,8 @@ public sealed class CacheBulkDeleteByLabelAsyncTests : EndpointTestBase
     [Fact]
     public async Task MapsErrorStatusThroughPipeline()
     {
-        var (client, _) = CreateClient((_, _) => Json("slow", System.Net.HttpStatusCode.TooManyRequests));
+        // HttpStatusCode.TooManyRequests (429) is not defined on .NET Framework; cast explicitly.
+        var (client, _) = CreateClient((_, _) => Json("slow", (System.Net.HttpStatusCode)429));
 
         await Assert.ThrowsAsync<RateLimitException>(
             () => client.CacheBulkDeleteByLabelAsync("pre", 10));

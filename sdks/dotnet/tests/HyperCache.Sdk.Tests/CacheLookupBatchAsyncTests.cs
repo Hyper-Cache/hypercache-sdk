@@ -163,6 +163,19 @@ public sealed class CacheLookupBatchAsyncTests : EndpointTestBase
     }
 
     [Fact]
+    public async Task EmptyInput_Throws_AndMakesNoHttpCall()
+    {
+        var (client, stub) = CreateClient((_, _) =>
+            throw new InvalidOperationException("No HTTP call should be made for empty input."));
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => client.CacheLookupBatchAsync(Array.Empty<CacheLookupBatchItem>()));
+
+        // The stub handler was never invoked, so no request was captured.
+        Assert.Null(stub.LastRequest);
+    }
+
+    [Fact]
     public async Task DisposedClientThrows()
     {
         var (client, _) = CreateClient((_, _) => TwoItemResponse());

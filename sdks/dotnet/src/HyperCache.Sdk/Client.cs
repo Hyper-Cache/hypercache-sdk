@@ -34,6 +34,12 @@ public sealed class Client : IDisposable
     private const string OctetStream = "application/octet-stream";
     private const string JsonMediaType = "application/json";
 
+    /// <summary>The environment variable read for the API key when no explicit key is supplied.</summary>
+    internal const string ApiKeyEnvVar = "HYPERCACHE_KEY";
+
+    /// <summary>The environment variable read for the base URL when no explicit base URL is supplied.</summary>
+    internal const string BaseUrlEnvVar = "HYPERCACHE_BASE_URL";
+
     private readonly HttpClient _httpClient;
     private readonly bool _ownsHttpClient;
     private readonly HttpPipeline _pipeline;
@@ -57,12 +63,14 @@ public sealed class Client : IDisposable
             throw new ArgumentNullException(nameof(options));
         }
 
-        BaseUrl = options.BaseUrl.ToString();
+        HyperCacheClientOptions resolved = ResolveOptions(options);
 
-        if (options.HttpClient is not null)
+        BaseUrl = resolved.BaseUrl.ToString();
+
+        if (resolved.HttpClient is not null)
         {
             // Injected client: use as-is and never dispose it (Go's WithHTTPClient parity).
-            _httpClient = options.HttpClient;
+            _httpClient = resolved.HttpClient;
             _ownsHttpClient = false;
         }
         else
@@ -76,7 +84,60 @@ public sealed class Client : IDisposable
             _ownsHttpClient = true;
         }
 
-        _pipeline = new HttpPipeline(_httpClient, options, ResolvePackageVersion());
+        _pipeline = new HttpPipeline(_httpClient, resolved, ResolvePackageVersion());
+    }
+
+    /// <summary>
+    /// Resolves effective options by layering environment variables under the
+    /// caller-supplied values. Explicit options always win; environment variables
+    /// are consulted only as a fallback. A usable API key must exist after this
+    /// resolution or an <see cref="AuthException"/> is thrown.
+    /// </summary>
+    private static HyperCacheClientOptions ResolveOptions(HyperCacheClientOptions options)
+    {
+        // Explicit ApiKey wins over HYPERCACHE_KEY.
+        string? apiKey = options.ApiKey;
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            string? envKey = Environment.GetEnvironmentVariable(ApiKeyEnvVar);
+            if (!string.IsNullOrEmpty(envKey))
+            {
+                apiKey = envKey;
+            }
+        }
+
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            throw new AuthException(
+                "No HyperCache API key was provided. Set HyperCacheClientOptions.ApiKey or the " +
+                ApiKeyEnvVar + " environment variable.");
+        }
+
+        // Explicit BaseUrl wins over HYPERCACHE_BASE_URL; the env var is consulted
+        // only when the caller left BaseUrl at its default.
+        Uri baseUrl = options.BaseUrl;
+        if (!options.BaseUrlExplicitlySet)
+        {
+            string? envBaseUrl = Environment.GetEnvironmentVariable(BaseUrlEnvVar);
+            if (!string.IsNullOrWhiteSpace(envBaseUrl))
+            {
+                if (!Uri.TryCreate(envBaseUrl, UriKind.Absolute, out Uri? parsed))
+                {
+                    throw new HyperCacheException(
+                        $"The {BaseUrlEnvVar} environment variable is not a valid absolute URL: '{envBaseUrl}'.");
+                }
+
+                baseUrl = parsed;
+            }
+        }
+
+        return new HyperCacheClientOptions
+        {
+            ApiKey = apiKey,
+            BaseUrl = baseUrl,
+            Timeout = options.Timeout,
+            HttpClient = options.HttpClient,
+        };
     }
 
     /// <summary>
@@ -253,6 +314,12 @@ public sealed class Client : IDisposable
         }
 
         var items = new List<CacheLookupBatchItem>(inputs);
+
+        if (items.Count == 0)
+        {
+            throw new ArgumentException("Batch lookup requires at least one item.", nameof(inputs));
+        }
+
         var payload = new BatchLookupRequest();
 
         foreach (CacheLookupBatchItem item in items)
