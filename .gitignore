@@ -31,3 +31,9 @@ Cargo.lock
 **/.DS_Store
 *.swp
 *.log
+
+# .NET build output
+bin/
+obj/
+artifacts/
+TestResults/

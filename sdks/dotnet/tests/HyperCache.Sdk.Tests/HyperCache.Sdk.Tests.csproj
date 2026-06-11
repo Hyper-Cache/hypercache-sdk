@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      Multi-targeted so the test suite exercises both the net8.0 library assembly and the
+      netstandard2.0 library assembly. The net48 target consumes the netstandard2.0 build,
+      covering the manual HexConvert path, the base64 helper compatibility behavior, and the
+      System.Memory / ReadOnlyMemory<byte> compatibility assumptions used there.
+    -->
+    <TargetFrameworks>net8.0;net48</TargetFrameworks>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!--
+    On .NET Framework, System.Net.Http types live in a framework assembly that is not
+    referenced by default. The test suite uses HttpClient/HttpResponseMessage throughout,
+    so add the reference for the net48 target only.
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\HyperCache.Sdk\HyperCache.Sdk.csproj" />
+  </ItemGroup>
+
+</Project>

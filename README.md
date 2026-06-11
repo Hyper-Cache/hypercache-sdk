@@ -1,6 +1,6 @@
 # HyperCache SDKs
 
-Official client libraries for the [HyperCache](https://hypercache.ai) API — Python, TypeScript/JavaScript, Rust, and Go.
+Official client libraries for the [HyperCache](https://hypercache.ai) API — Python, TypeScript/JavaScript, Rust, Go, and .NET.
 
 ## Three gains, one primitive
 
@@ -18,6 +18,7 @@ Official client libraries for the [HyperCache](https://hypercache.ai) API — Py
 | TypeScript / JS | `npm install hypercache-kv` | [npm](https://www.npmjs.com/package/hypercache-kv) |
 | Rust | `cargo add hypercache-kv` | [crates.io](https://crates.io/crates/hypercache-kv) |
 | Go | `go get github.com/Hyper-Cache/hypercache-sdk/sdks/go@latest` | — |
+| .NET | `dotnet add package HyperCache.Sdk` | [NuGet](https://www.nuget.org/packages/HyperCache.Sdk/) |
 
 Set your key:
 
@@ -49,6 +50,7 @@ sdks/
   typescript/  npm install hypercache-kv
   rust/        cargo add hypercache-kv            (lib: hypercache)
   go/          go get github.com/Hyper-Cache/hypercache-sdk/sdks/go
+  dotnet/      dotnet add package HyperCache.Sdk  (namespace: HyperCache)
 ```
 
 ## License
