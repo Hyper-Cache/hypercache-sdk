@@ -4,11 +4,11 @@ Official client libraries for the [HyperCache](https://hypercache.ai) API — Py
 
 ## Three gains, one primitive
 
-| Gain | What it does | Measured |
-|---|---|---|
-| **Skip repeated LLM calls** | Same prompt → cached response in milliseconds | **7.5×** faster on cache hit vs real Phi-3-mini |
-| **Skip repeated GPU prefill** | Self-hosted inference reuses prefilled KV state | **21×** faster vs cold prefill at 1199 tokens |
-| **Prove what happened** | Every step gets a cryptographic fingerprint, chained for audit | Byte-precision; forgery-resistant |
+| Gain | What it does |
+|---|---|
+| **Skip repeated LLM calls** | Same prompt → cached response in milliseconds | 
+| **Skip repeated GPU prefill** | Inference reuses prefilled KV state | 
+| **Prove what happened** | Every step gets a cryptographic fingerprint, chained for audit |
 
 ## Install
 
