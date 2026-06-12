@@ -1,0 +1,49 @@
+name: Publish .NET SDK to NuGet
+
+# Manual, deliberate publish via Trusted Publishing (OIDC) - no stored API key.
+# Before running: bump <Version> in
+# sdks/dotnet/src/HyperCache.Sdk/HyperCache.Sdk.csproj, commit, and push to main.
+# Then: Actions tab -> "Publish .NET SDK to NuGet" -> Run workflow.
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # required so the job can request a GitHub OIDC token
+      contents: read
+    defaults:
+      run:
+        working-directory: sdks/dotnet
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET (version pinned by global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: sdks/dotnet/global.json
+
+      # Gate the publish on the unit tests. net8.0 only: the suite also targets
+      # net48, which cannot execute on the Linux runner. Integration tests skip
+      # automatically (no HYPERCACHE_KEY set in CI).
+      - name: Unit tests (net8.0)
+        run: dotnet test tests/HyperCache.Sdk.Tests/HyperCache.Sdk.Tests.csproj -c Release --framework net8.0
+
+      - name: Pack
+        run: dotnet pack src/HyperCache.Sdk/HyperCache.Sdk.csproj -c Release -o "${{ github.workspace }}/artifacts"
+
+      # Exchange the OIDC token for a short-lived (1h) NuGet API key.
+      - name: NuGet login (OIDC -> temporary key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push to NuGet
+        run: >
+          dotnet nuget push "${{ github.workspace }}/artifacts/*.nupkg"
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
