@@ -333,3 +333,9 @@ https://github.com/Hyper-Cache/hypercache-sdk
 ## License
 
 MIT
+
+## Contributions
+
+```text
+.NET SDK contributed by @ssanger65.
+```
