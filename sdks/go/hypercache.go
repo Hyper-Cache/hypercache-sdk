@@ -645,10 +645,10 @@ func (s *Session) Fingerprint(ctx context.Context, data []byte, opts ...Fingerpr
 
 // Helpers for base64 without bringing encoding/base64 into the import block twice.
 func base64Encode(b []byte) string {
-	return stdBase64.EncodeToString(b)
+	return stdBase64.StdEncoding.EncodeToString(b)
 }
 func base64Decode(s string) ([]byte, error) {
-	return stdBase64.DecodeString(s)
+	return stdBase64.StdEncoding.DecodeString(s)
 }
 
 // ----- Pipeline: all-in template (cache + chain + report) -----
