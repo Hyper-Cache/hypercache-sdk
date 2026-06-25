@@ -2,14 +2,6 @@
 
 Official client libraries for the [HyperCache](https://hypercache.ai) API — Python, TypeScript/JavaScript, Rust, Go, and .NET.
 
-## Three gains, one primitive
-
-| Gain | What it does |
-|---|---|
-| **Skip repeated LLM calls** | Same prompt → cached response in milliseconds | 
-| **Skip repeated GPU prefill** | Inference reuses prefilled KV state | 
-| **Prove what happened** | Every step gets a cryptographic fingerprint, chained for audit |
-
 ## Install
 
 | Language | Install | Package |
